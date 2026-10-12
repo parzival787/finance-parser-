@@ -40,22 +40,32 @@ From the `FinanceParser/` directory, this PowerShell compilation includes the ro
 
 ```powershell
 $sources = Get-ChildItem src -Recurse -Filter *.java | Select-Object -ExpandProperty FullName
-javac -cp "lib/*" -d out @sources
-java -cp "out;lib/*" gui.FinanceGUI
+javac -cp "lib/mysql-connector-j-9.6.0.jar" -d out @sources
+java -cp "out;lib/mysql-connector-j-9.6.0.jar" gui.FinanceGUI
 # Command-line alternative:
-java -cp "out;lib/*" Main
+java -cp "out;lib/mysql-connector-j-9.6.0.jar" Main
 ```
 
 The desktop database tools include SQL execution and data-clearing actions. Use a sample database when exploring them. Chart.js is loaded from a CDN, so the exported dashboard needs network access to load the chart library.
 
+## Input paths and known import limits
+
+The CLI currently hardcodes its input and dashboard output paths in `Main.java`; it does not accept a filename argument. Its default user/source IDs must exist in the database, and its chart export period is currently `2024-10`.
+
+The committed sample file is named `resources/sms_inbox` without an extension. The Swing editor instead reads/writes `resources/sms_inbox.txt`. Copy the sample to that name or paste messages into the GUI before using **Save & Replace**; saving replaces that text file.
+
+`SmsXmlConverter.extractBody` currently searches for an empty closing delimiter, so the converter cannot be relied on to extract SMS bodies correctly. Use the plain-text input workflow for now.
+
+A useful first check is to import two sample messages with distinct UPI references into a sample database, rerun them, and confirm that those references are skipped. Check an input without a reference separately. Review both transaction rows and chart output; a parser log alone does not verify the financial totals.
+
 ## ✨ Features
 
 - 🏦 Supports **Axis Bank** (multi-line) and **SBI, HDFC, ICICI, Kotak, PNB, BOB, Canara, Paytm, PhonePe** (single-line)
-- 🔁 **Idempotent** — duplicate UPI refs are detected and skipped on re-runs
+- 🔁 **Duplicate UPI-reference detection** — repeated non-empty references are skipped; messages without a reference are not guaranteed to be deduplicated
 - 🏷️ **Auto-categorization** via configurable keyword rules stored in the DB (no code change needed)
 - 📊 **HTML dashboard** with pie, bar, and line charts (Chart.js)
 - 🖨️ **Console reports** — spending by category, monthly trend, budget vs actual, top merchants
-- 📦 **Android XML import** — converts SMS Backup & Restore exports directly to the input format
+- 📦 **Experimental Android XML importer** — converter source is included, but its current body extraction needs repair before relying on imported results
 
 ---
 
@@ -334,7 +344,7 @@ SmsXmlConverter.convert("path/to/backup.xml", "resources/sms_inbox");
 ### IntelliJ IDEA
 
 1. Open the `FinanceParser` folder as a project
-2. **File → Project Structure → Libraries → +** → add both JARs from `lib/`
+2. **File → Project Structure → Libraries → +** → add `lib/mysql-connector-j-9.6.0.jar` (use one driver version)
 3. Set `Main` as the run configuration class
 4. Run — console output shows parse results; dashboard is written to `charts/index.html`
 
@@ -342,7 +352,10 @@ SmsXmlConverter.convert("path/to/backup.xml", "resources/sms_inbox");
 
 ```bash
 # Compile
-javac -cp "lib/mysql-connector-j-9.6.0.jar" -d out src/**/*.java
+# Run from FinanceParser/ using Bash (macOS/Linux).
+# Include Main.java as well as package sources; do not rely on ** glob expansion.
+find src -name '*.java' -print > sources.txt
+javac -cp "lib/mysql-connector-j-9.6.0.jar" -d out @sources.txt
 
 # Run (Linux/Mac)
 java -cp "out:lib/mysql-connector-j-9.6.0.jar" Main
