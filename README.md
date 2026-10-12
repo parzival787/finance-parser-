@@ -18,6 +18,36 @@ Most Indian banks send an SMS for every transaction. FinanceParser reads those m
 
 ---
 
+## Start here
+
+FinanceParser turns bank SMS alerts into structured transactions and spending reports. You can use it as a command-line pipeline or through the included Swing desktop interface.
+
+| Interface | Entry point | What you see |
+| --- | --- | --- |
+| Command-line importer | [Main.java](FinanceParser/src/Main.java) | Parsing results, console reports, and an exported HTML dashboard |
+| Desktop app | [FinanceGUI.java](FinanceParser/src/gui/FinanceGUI.java) | Transaction views, SMS entry/import, reports, budgets, user management, and database tools |
+| Browser dashboard | Generated `FinanceParser/charts/index.html` | Chart.js category, monthly, and daily charts |
+
+### Your first run
+
+1. Create the MySQL database and seed the lookup records using the setup below.
+2. Configure the database connection and the machine-specific paths in `Main.java`.
+3. Paste sample SMS messages into `FinanceParser/resources/sms_inbox`, keeping a blank line between messages.
+4. Run `Main` from your IDE to import and produce reports, or run `gui.FinanceGUI` for the desktop interface.
+5. Open the HTML file at the output path configured in the entry point you used.
+
+From the `FinanceParser/` directory, this PowerShell compilation includes the root-level `Main.java` and every package:
+
+```powershell
+$sources = Get-ChildItem src -Recurse -Filter *.java | Select-Object -ExpandProperty FullName
+javac -cp "lib/*" -d out @sources
+java -cp "out;lib/*" gui.FinanceGUI
+# Command-line alternative:
+java -cp "out;lib/*" Main
+```
+
+The desktop database tools include SQL execution and data-clearing actions. Use a sample database when exploring them. Chart.js is loaded from a CDN, so the exported dashboard needs network access to load the chart library.
+
 ## ✨ Features
 
 - 🏦 Supports **Axis Bank** (multi-line) and **SBI, HDFC, ICICI, Kotak, PNB, BOB, Canara, Paytm, PhonePe** (single-line)
